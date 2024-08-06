@@ -40,11 +40,12 @@ interface WordProps {
   isFocused: boolean;
   highlightedIndex: number;
   correctWord: string;
+  guessStatus:boolean[];
   onCellClick: (wordId: number, cellIndex: number) => void;
 }
 
 const Word: React.FC<WordProps> = ({
-  id, cells, position, direction, isFocused, highlightedIndex, correctWord, onCellClick
+  id, cells, position, direction, isFocused, highlightedIndex, correctWord, onCellClick, guessStatus
 }) => (
   <>
     {cells.map((letter, index) => {
@@ -59,7 +60,8 @@ const Word: React.FC<WordProps> = ({
           isHighlighted={isFocused && index === highlightedIndex}
           isFocused={isFocused}
           wordNumbers={index === 0 ? [id] : []}
-          isCorrect={letter ? letter.toLowerCase() === correctWord[index].toLowerCase() : null}
+          // isCorrect={letter ? letter.toLowerCase() === correctWord[index].toLowerCase() : null}
+          isCorrect={guessStatus.every(Boolean)}
           onClick={() => onCellClick(id, index)}
           position={cellPosition}
         />
@@ -68,16 +70,16 @@ const Word: React.FC<WordProps> = ({
   </>
 );
 
-type WordItem = {
+type WordData = {
   id: number;
-  word: string;
+  correctWord: string;
   position: { x: number; y: number };
   direction: 'across' | 'down';
   clue: string;
 };
 
 interface CrosswordGridProps {
-  words: WordItem[];
+  words: WordData[];
   rows: number;
   cols: number;
 }
@@ -119,7 +121,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
       newGrid[y + dy * highlightedCellIndex][x + dx * highlightedCellIndex] = event.key.toUpperCase();
       setGrid(newGrid);
 
-      if (highlightedCellIndex < word.word.length - 1) {
+      if (highlightedCellIndex < word.correctWord.length - 1) {
         setHighlightedCellIndex(highlightedCellIndex + 1);
       }
     } else if (event.key === 'Backspace') {
@@ -176,13 +178,14 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
           <Word
             key={word.id}
             id={word.id}
-            cells={word.word.split('').map((_, i) => grid[word.position.y + (word.direction === 'down' ? i : 0)][word.position.x + (word.direction === 'across' ? i : 0)])}
+            cells={word.correctWord.split('').map((_, i) => grid[word.position.y + (word.direction === 'down' ? i : 0)][word.position.x + (word.direction === 'across' ? i : 0)])}
+            guessStatus={word.correctWord.split('').map((char, i) => char === grid[word.position.y + (word.direction === 'down' ? i : 0)][word.position.x + (word.direction === 'across' ? i : 0)])}
             position={word.position}
             direction={word.direction}
             isFocused={focusedWordId === word.id}
             highlightedIndex={highlightedCellIndex}
             onCellClick={handleCellClick}
-            correctWord={word.word}
+            correctWord={word.correctWord}
           />
         ))}
       </div>
@@ -192,17 +195,17 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
 
 
 const App: React.FC = () => {
-  const words: WordItem[] = [
-    { id: 1, word: 'THE', position: { x: 0, y: 0 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 2, word: 'PRIME', position: { x: 10, y: 10 }, direction: 'down', clue: 'Top Text' },
-    { id: 3, word: 'AGEN', position: { x: 20, y: 20 }, direction: 'across', clue: 'Bottom Text' },
-    { id: 4, word: 'FOO', position: { x: 15, y: 10 }, direction: 'down', clue: 'Test Clue Text' },
-    { id: 5, word: 'BAR', position: { x: 30, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 6, word: 'FIZZ', position: { x: 0, y: 35 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 7, word: 'FUZZ', position: { x: 20, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 8, word: 'AAAAA', position: { x: 0, y: 25 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 9, word: 'BBBBB', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 10, word: 'CCCCC', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+  const words: WordData[] = [
+    { id: 1, correctWord: 'THE', position: { x: 0, y: 0 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 2, correctWord: 'PRIME', position: { x: 10, y: 10 }, direction: 'down', clue: 'Top Text' },
+    { id: 3, correctWord: 'AGEN', position: { x: 20, y: 20 }, direction: 'across', clue: 'Bottom Text' },
+    { id: 4, correctWord: 'FOO', position: { x: 15, y: 10 }, direction: 'down', clue: 'Test Clue Text' },
+    { id: 5, correctWord: 'BAR', position: { x: 30, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 6, correctWord: 'FIZZ', position: { x: 0, y: 35 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 7, correctWord: 'FUZZ', position: { x: 20, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 8, correctWord: 'AAAAA', position: { x: 0, y: 25 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 9, correctWord: 'BBBBB', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 10, correctWord: 'CCCCC', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
   ];
 
   return (
