@@ -1,5 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 
+type WordData = {
+  id: number;
+  correctWord: string;
+  position: { x: number; y: number };
+  direction: 'across' | 'down';
+  clue: string;
+};
+
 interface CellProps {
   letter: string;
   isHighlighted: boolean;
@@ -10,13 +18,31 @@ interface CellProps {
   onClick: () => void;
 }
 
+interface WordProps {
+  id: number;
+  cells: string[];
+  position: { x: number; y: number };
+  direction: 'across' | 'down';
+  isFocused: boolean;
+  highlightedIndex: number;
+  correctWord: string;
+  guessStatus: boolean[];
+  onCellClick: (wordId: number, cellIndex: number) => void;
+}
+
+interface CrosswordGridProps {
+  words: WordData[];
+  rows: number;
+  cols: number;
+}
+
 const Cell: React.FC<CellProps> = ({
   letter, isHighlighted, isFocused, wordNumbers, isCorrect, position, onClick
 }) => (
   <div
     className={`absolute w-[50px] h-[50px] border border-black flex items-center justify-center cursor-pointer
       ${isHighlighted ? 'bg-yellow-200' : isFocused ? 'bg-blue-100' : 'bg-white'}
-      ${isCorrect === true ? 'text-green-600' : isCorrect === false ? 'text-red-600' : ''}`} // for debugging
+      ${isCorrect === true ? 'text-green-600' : 'text-red-600'}`} // for debugging
     style={{
       left: `${position.x * 50}px`,
       top: `${position.y * 50}px`,
@@ -32,18 +58,9 @@ const Cell: React.FC<CellProps> = ({
   </div>
 );
 
-interface WordProps {
-  id: number;
-  cells: string[];
-  position: { x: number; y: number };
-  direction: 'across' | 'down';
-  isFocused: boolean;
-  highlightedIndex: number;
-  correctWord: string;
-  guessStatus:boolean[];
-  onCellClick: (wordId: number, cellIndex: number) => void;
-}
 
+
+// Word is more like manager than container, cells have absolute position
 const Word: React.FC<WordProps> = ({
   id, cells, position, direction, isFocused, highlightedIndex, correctWord, onCellClick, guessStatus
 }) => (
@@ -70,26 +87,33 @@ const Word: React.FC<WordProps> = ({
   </>
 );
 
-type WordData = {
-  id: number;
-  correctWord: string;
-  position: { x: number; y: number };
-  direction: 'across' | 'down';
-  clue: string;
-};
 
-interface CrosswordGridProps {
-  words: WordData[];
-  rows: number;
-  cols: number;
-}
+
 
 const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
   const [focusedWordId, setFocusedWordId] = useState<number | null>(null);
   const [highlightedCellIndex, setHighlightedCellIndex] = useState<number>(0);
   const [grid, setGrid] = useState<string[][]>(
-    Array(rows).fill(null).map(() => Array(cols).fill(''))
+    Array(rows).fill(null).map(() => Array(cols).fill(' '))
   );
+  const [gridTaken, setGridTaken] = useState<boolean[][]>(
+    Array(rows).fill(null).map(() => Array(cols).fill(false))
+  );
+
+  useEffect(() => {
+    const newGridTaken = Array(rows).fill(null).map(() => Array(cols).fill(''));
+    words.forEach(word => {
+      const { x, y } = word.position;
+      for (let i = 0; i < word.correctWord.length; i++) {
+        if (word.direction === 'across') {
+          newGridTaken[y][x + i] = true;
+        } else {
+          newGridTaken[y + i][x] = true;
+        }
+      }
+    });
+    setGridTaken(newGridTaken);
+  }, [words, rows, cols]);
 
   const handleCellClick = useCallback((wordId: number, cellIndex: number) => {
     setFocusedWordId(prevId => {
@@ -120,6 +144,16 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
 
       newGrid[y + dy * highlightedCellIndex][x + dx * highlightedCellIndex] = event.key.toUpperCase();
       setGrid(newGrid);
+      let message = ""
+      gridTaken.forEach(row => {
+        row.forEach(element => {
+          message += element ? 'X' : ' '
+        });
+        message += "\n"
+      });
+      console.clear()
+      console.log(message)
+
 
       if (highlightedCellIndex < word.correctWord.length - 1) {
         setHighlightedCellIndex(highlightedCellIndex + 1);
@@ -130,7 +164,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
       const dx = word.direction === 'across' ? 1 : 0;
       const dy = word.direction === 'down' ? 1 : 0;
 
-      newGrid[y + dy * highlightedCellIndex][x + dx * highlightedCellIndex] = '';
+      newGrid[y + dy * highlightedCellIndex][x + dx * highlightedCellIndex] = ' ';
       setGrid(newGrid);
 
       if (highlightedCellIndex > 0) {
@@ -140,7 +174,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
   }, [focusedWordId, highlightedCellIndex, words, grid]);
 
   const checkAnswer = useCallback(() => {
-    
+
   }, []);
 
   const getCurrentClue = useCallback(() => {
@@ -200,17 +234,17 @@ const App: React.FC = () => {
     { id: 2, correctWord: 'PRIME', position: { x: 10, y: 10 }, direction: 'down', clue: 'Top Text' },
     { id: 3, correctWord: 'AGEN', position: { x: 20, y: 20 }, direction: 'across', clue: 'Bottom Text' },
     { id: 4, correctWord: 'FOO', position: { x: 15, y: 10 }, direction: 'down', clue: 'Test Clue Text' },
-    { id: 5, correctWord: 'BAR', position: { x: 30, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 6, correctWord: 'FIZZ', position: { x: 0, y: 35 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 7, correctWord: 'FUZZ', position: { x: 20, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 8, correctWord: 'AAAAA', position: { x: 0, y: 25 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 9, correctWord: 'BBBBB', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
-    { id: 10, correctWord: 'CCCCC', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 5, correctWord: 'BAR', position: { x: 3, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 6, correctWord: 'FIZZ', position: { x: 0, y: 5 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 7, correctWord: 'FUZZ', position: { x: 2, y: 6 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 8, correctWord: 'AAAAA', position: { x: 5, y: 7 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 9, correctWord: 'BBBBB', position: { x: 6, y: 8 }, direction: 'across', clue: 'Test Clue Text' },
+    { id: 10, correctWord: 'CCCCC', position: { x: 7, y: 9 }, direction: 'across', clue: 'Test Clue Text' },
   ];
 
   return (
     <div>
-      <CrosswordGrid words={words} rows={50} cols={60} />
+      <CrosswordGrid words={words} rows={30} cols={30} />
     </div>
   );
 };
