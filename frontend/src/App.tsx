@@ -28,10 +28,11 @@ interface WordProps {
   correctWord: string;
   guessStatus: boolean[];
   onCellClick: (wordId: number, cellIndex: number) => void;
+  onWordCorrect: (wordId: number) => void;
 }
 
 interface CrosswordGridProps {
-  words: WordData[];
+  initialWords: WordData[];
   rows: number;
   cols: number;
 }
@@ -62,8 +63,15 @@ const Cell: React.FC<CellProps> = ({
 
 // Word is more like manager than container, cells have absolute position
 const Word: React.FC<WordProps> = ({
-  id, cells, position, direction, isFocused, highlightedIndex, correctWord, onCellClick, guessStatus
-}) => (
+  id, cells, position, direction, isFocused, highlightedIndex, correctWord, onCellClick, guessStatus, onWordCorrect
+}) => {
+  useEffect(() => {
+    if (guessStatus.every(Boolean)) {
+      onWordCorrect(id);
+    }
+  }, [guessStatus]);
+
+  return(
   <>
     {cells.map((letter, index) => {
       const cellPosition = {
@@ -85,21 +93,22 @@ const Word: React.FC<WordProps> = ({
       );
     })}
   </>
-);
+);}
 
 
 
 
-const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
+const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols }) => {
   const [focusedWordId, setFocusedWordId] = useState<number | null>(null);
   const [highlightedCellIndex, setHighlightedCellIndex] = useState<number>(0);
+  const [words, setWords] = useState<WordData[]>(initialWords)
   const [grid, setGrid] = useState<string[][]>(
     Array(rows).fill(null).map(() => Array(cols).fill(' '))
   );
   const [gridTaken, setGridTaken] = useState<boolean[][]>(
     Array(rows).fill(null).map(() => Array(cols).fill(false))
   );
-
+  const Corpus = {"abcd":"abcd", "bcdd":"bcdd"}
   useEffect(() => {
     const newGridTaken = Array(rows).fill(null).map(() => Array(cols).fill(''));
     words.forEach(word => {
@@ -128,6 +137,16 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
       return wordId;
     });
     setHighlightedCellIndex(cellIndex);
+  }, [words]);
+
+  const handleAddWord = useCallback((wordId: number) => {
+    const newWord: WordData = { id: 100, 
+      correctWord: 'THE', 
+      position: { x: 3, y: 3 }, 
+      direction: 'across', 
+      clue: 'Test Clue Text' }
+    
+    setWords([...words, newWord]);
   }, [words]);
 
   const handleKeyPress = useCallback((event: React.KeyboardEvent) => {
@@ -220,6 +239,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ words, rows, cols }) => {
             highlightedIndex={highlightedCellIndex}
             onCellClick={handleCellClick}
             correctWord={word.correctWord}
+            onWordCorrect={handleAddWord}
           />
         ))}
       </div>
@@ -244,7 +264,7 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <CrosswordGrid words={words} rows={30} cols={30} />
+      <CrosswordGrid initialWords={words} rows={30} cols={30} />
     </div>
   );
 };
