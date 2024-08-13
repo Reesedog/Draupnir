@@ -140,10 +140,15 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
   }, [words]);
 
   const handleAddWord = useCallback((wordId: number) => {
-    const newWord: WordData = { id: 100, 
-      correctWord: 'THE', 
-      position: { x: 3, y: 3 }, 
-      direction: 'across', 
+    const correctWordData = words.find(word => word.id === wordId);
+    if (!correctWordData) return;
+    const dx = correctWordData?.direction === 'across' ? 1 : 0;
+    const dy = correctWordData?.direction === 'down' ? 1 : 0;
+    const newWord: WordData = 
+    { id: wordId + 10, 
+      correctWord: correctWordData.correctWord,
+      position: { x: correctWordData.position.x +  3*dx, y: correctWordData.position.y + 3*dy}, 
+      direction: correctWordData?.direction==='across'? 'down' : 'across', 
       clue: 'Test Clue Text' }
     
     setWords([...words, newWord]);
