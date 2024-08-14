@@ -114,7 +114,28 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
   const [corpus, setCorpus] = useState([
     { correctWord: "side", clue: "abcd" },
     { correctWord: "blue", clue: "bcdd" },
-  ]);
+    { correctWord: "cake", clue: "dabc" },
+    { correctWord: "time", clue: "cdda" },
+    { correctWord: "lamp", clue: "adcc" },
+    { correctWord: "fork", clue: "dbbc" },
+    { correctWord: "rain", clue: "cbad" },
+    { correctWord: "tree", clue: "ddcb" },
+    { correctWord: "note", clue: "bada" },
+    { correctWord: "wind", clue: "dacd" },
+    { correctWord: "milk", clue: "bcad" },
+    { correctWord: "rope", clue: "acdb" },
+    { correctWord: "moon", clue: "cdba" },
+    { correctWord: "book", clue: "abdc" },
+    { correctWord: "sand", clue: "bdca" },
+    { correctWord: "fire", clue: "dabc" },
+    { correctWord: "star", clue: "cadd" },
+    { correctWord: "fish", clue: "bacd" },
+    { correctWord: "ball", clue: "cddb" },
+    { correctWord: "leaf", clue: "adbd" },
+    { correctWord: "wolf", clue: "dcba" },
+    { correctWord: "ship", clue: "cadb" },
+]);
+
   useEffect(() => {
     const newGridTaken = Array(rows).fill(null).map(() => Array(cols).fill(''));
     words.forEach(word => {
@@ -128,7 +149,15 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
       }
     });
     setGridTaken(newGridTaken);
-  }, [words, rows, cols]);
+    let message = ""
+      gridTaken.forEach(row => {
+        row.forEach(element => {
+          message += element ? 'X' : ' '
+        });
+        message += "\n"
+      });
+      console.log(message)
+  }, [words]);
 
   const handleCellClick = useCallback((wordId: number, cellIndex: number) => {
     setFocusedWordId(prevId => {
@@ -148,17 +177,28 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
   const handleAddWord = useCallback((wordId: number) => {
     const correctWordData = words.find(word => word.id === wordId);
     if (!correctWordData) return;
-    const dx = correctWordData?.direction === 'across' ? 1 : 0;
-    const dy = correctWordData?.direction === 'down' ? 1 : 0;
-    let newCorrectWord = "NOWORD"
+    // if across, then go down, y increase
+    const dx = correctWordData?.direction === 'across' ? 0 : 1;
+    const dy = correctWordData?.direction === 'down' ? 0 : 1;
+    let newCorrectWord = "XXXXXX"
     let randomOffset = 0
     let crossIndex = 0
     let searchComplete = false;
     corpus.forEach((word, clue) => {
       if (searchComplete) return; 
-      for (randomOffset = 0; randomOffset < word.correctWord.length; randomOffset++) {
-        for (crossIndex = 0; crossIndex < newCorrectWord.length; crossIndex++) {
+      for (randomOffset = 1; randomOffset < word.correctWord.length; randomOffset++) {
+        indexLoop: for (crossIndex = 0; crossIndex < newCorrectWord.length; crossIndex++) {
           if (correctWordData.correctWord[randomOffset] === word.correctWord.toUpperCase()[crossIndex]) {
+            for (let i = 0; i < word.correctWord.length; i++) {
+              // if having conflict with other words
+              console.log("original word at" + (correctWordData.position.y) + " " + (correctWordData.position.x))
+              console.log("conflict at" + (correctWordData.position.y + dx * randomOffset + dy * (i-crossIndex)) + " " + (correctWordData.position.x + dy * randomOffset + dx * (i-crossIndex)))
+              if (i !== crossIndex && gridTaken[correctWordData.position.y + dx * randomOffset + dy * (i-crossIndex)][correctWordData.position.x + dy * randomOffset + dx * (i-crossIndex)]) {
+                console.log("conflict")
+                break indexLoop;
+              }
+            }
+
             newCorrectWord = word.correctWord.toUpperCase();
             searchComplete = true;              
             break;
@@ -170,7 +210,9 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
     // const randomOffset = Math.ceil(Math.random() * (correctWordData.correctWord.length - 1));
     
     setCorpus(prevCorpus => prevCorpus.filter(({ correctWord }) => correctWord.toUpperCase() !== newCorrectWord));
-    console.log(corpus)
+    console.log(newCorrectWord)
+    console.log(correctWordData.position.y + randomOffset * dy - crossIndex * dx)
+    console.log(correctWordData.position.x + randomOffset * dx - crossIndex * dy)
         
 
     const newWord: WordData =
@@ -179,8 +221,8 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
       correctWord: newCorrectWord,
       position:
       {
-        x: correctWordData.position.x + randomOffset * dx - crossIndex * dy,
-        y: correctWordData.position.y + randomOffset * dy - crossIndex * dx
+        x: correctWordData.position.x + randomOffset * dy - crossIndex * dx,
+        y: correctWordData.position.y + randomOffset * dx - crossIndex * dy
       },
       direction: correctWordData?.direction === 'across' ? 'down' : 'across',
       clue: 'Test Clue Text'
@@ -203,15 +245,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
 
       newGrid[y + dy * highlightedCellIndex][x + dx * highlightedCellIndex] = event.key.toUpperCase();
       setGrid(newGrid);
-      let message = ""
-      gridTaken.forEach(row => {
-        row.forEach(element => {
-          message += element ? 'X' : ' '
-        });
-        message += "\n"
-      });
-      console.clear()
-      console.log(message)
+      
 
 
       if (highlightedCellIndex < word.correctWord.length - 1) {
@@ -290,7 +324,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
 
 const App: React.FC = () => {
   const words: WordData[] = [
-    { id: 1, correctWord: 'THE', position: { x: 0, y: 0 }, direction: 'across', clue: 'Test Clue Text' },
+    // { id: 1, correctWord: 'THE', position: { x: 0, y: 0 }, direction: 'across', clue: 'Test Clue Text' },
     { id: 2, correctWord: 'PRIME', position: { x: 5, y: 5 }, direction: 'down', clue: 'Top Text' },
     // { id: 3, correctWord: 'AGEN', position: { x: 20, y: 20 }, direction: 'across', clue: 'Bottom Text' },
     // { id: 4, correctWord: 'FOO', position: { x: 15, y: 10 }, direction: 'down', clue: 'Test Clue Text' },
