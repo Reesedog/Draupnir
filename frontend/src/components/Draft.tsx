@@ -12,7 +12,6 @@ interface Cell {
     letter: string;
     isHighlighted: boolean;
     isFocused: boolean;
-    isHead: boolean;
     wordIDs: number[];
     isCorrect: boolean | null;
     position: { x: number; y: number };
@@ -23,7 +22,6 @@ interface CellProps {
     letter: string;
     isHighlighted: boolean;
     isFocused: boolean;
-    isHead: boolean;
     wordIDs: number[];
     isCorrect: boolean | null;
     position: { x: number; y: number };
@@ -50,7 +48,7 @@ interface CrosswordGridProps {
 }
 
 const Cell: React.FC<CellProps> = ({
-    letter, isHighlighted, isFocused, isHead, wordIDs, isCorrect, position, onClick
+    letter, isHighlighted, isFocused, wordIDs, isCorrect, position, onClick
 }) => (
     <div
         className={`absolute w-[50px] h-[50px] border border-black flex items-center justify-center cursor-pointer
@@ -63,11 +61,11 @@ const Cell: React.FC<CellProps> = ({
         onClick={onClick}
     >
         {letter}
-        {isHead && (
-            <span className="absolute text-xs top-0 left-1">
-                {wordIDs[0]}
+        {wordIDs.map((num, index) => (
+            <span className={`absolute text-xs ${index === 0 ? 'top-0 left-1' : 'top-1 left-0'}`}>
+                {num}
             </span>
-        )}
+        ))}
     </div>
 );
 
@@ -99,7 +97,6 @@ const Word: React.FC<WordProps> = ({
                         letter={letter}
                         isHighlighted={isFocused && index === highlightedIndex}
                         isFocused={isFocused}
-                        isHead={index === 0}
                         wordIDs={index === 0 ? [id] : []}
                         // isCorrect={letter ? letter.toLowerCase() === correctWord[index].toLowerCase() : null}
                         isCorrect={guessStatus.every(Boolean)}
@@ -116,14 +113,12 @@ function Words2Cells(words: WordData[]): Cell[][] {
     const cellGrid = Array(30).fill(null).map(() => Array(30).fill(null));
     words.forEach(word => {
         const { x, y } = word.position;
-        if (cellGrid[y][x] == null) {
-            console.log("new word at" + x + " " + y);
+        if (cellGrid[y][x] !== null) {
             for (let i = 0; i < word.correctWord.length; i++) {
                 cellGrid[y + (word.direction === 'down' ? i : 0)][x + (word.direction === 'across' ? i : 0)] = {
                     letter: word.correctWord[i],
                     isHighlighted: false,
                     isFocused: false,
-                    isHead: i === 0,
                     wordIDs: [word.id],
                     isCorrect: null,
                     position: { x: x + (word.direction === 'across' ? i : 0), y: y + (word.direction === 'down' ? i : 0) },
@@ -135,7 +130,6 @@ function Words2Cells(words: WordData[]): Cell[][] {
             cellGrid[y][x].wordIDs.push(word.id);
         }
     });
-    console.log(cellGrid);
     return cellGrid;
 }
 
@@ -347,24 +341,23 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
                 onKeyDown={handleKeyPress}
             >
                 <>
-                    {Words2Cells(words).map(cells => (
-                        cells
-                            .filter(cell => cell !== null)
-                            .map(cell => (
-                                <Cell
-                                    key={`${cell.position.x}-${cell.position.y}`}
-                                    letter={cell.letter}
-                                    isHighlighted={cell.isHighlighted}
-                                    isFocused={cell.isFocused}
-                                    isHead={cell.isHead}
-                                    wordIDs={cell.wordIDs}
-                                    isCorrect={cell.isCorrect}
-                                    position={cell.position}
-                                    onClick={cell.onClick}
-                                />
-                            ))
+                    {Words2Cells(words).map(cells => {
+                        cells.map(cell => {
+                            <Cell
+                                key={`${cell.position.x}-${cell.position.y}`}
+                                letter={cell.letter}
+                                isHighlighted={cell.isHighlighted}
+                                isFocused={cell.isFocused}
+                                wordIDs={cell.wordIDs}
+                                isCorrect={cell.isCorrect}
+                                position={cell.position}
+                                onClick={cell.onClick}
+                            />
+
+                        })
+                    }
                     )
-                    )}
+                    }
                 </>
 
             </div>
@@ -375,7 +368,7 @@ const CrosswordGrid: React.FC<CrosswordGridProps> = ({ initialWords, rows, cols 
 
 const App: React.FC = () => {
     const words: WordData[] = [
-        { id: 1, correctWord: 'PRIME', position: { x: 5, y: 5 }, direction: 'down', clue: 'Top Text' },
+        { id: 2, correctWord: 'PRIME', position: { x: 5, y: 5 }, direction: 'down', clue: 'Top Text' },
     ];
 
     return (
